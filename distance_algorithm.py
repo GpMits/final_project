@@ -158,6 +158,14 @@ def move_all():
                 set_highest_priority_group()
         else:
             ended = False
+            for robot in robots:
+                if robot.group == 'g' + str(i+1) :
+                    rep_force_x, rep_force_y = get_rep_force(robot)
+                    robot_oldx = robot.pos[0]
+                    robot_oldy = robot.pos[1]
+                    robot.pos[0] = robot.pos[0] + check_force(rep_force_x)
+                    robot.pos[1] = robot.pos[1] + check_force(rep_force_y)
+                    total_distance += get_distance([robot_oldx, robot_oldy], robot.pos)
         
         if not ended:        
             if feed == True:
