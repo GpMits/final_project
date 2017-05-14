@@ -1,8 +1,20 @@
+"""
+Distance algorithm shell
+
+Usage:
+    distance_algorithm.py <number_of_robots_in_group> <group_colors> [--view]
+
+Options:
+    --view
+        GUI Mode
+        
+"""
+
 import random
 import math
 import sys
+import docopt
 import matplotlib.pyplot as plt
-import numpy as np
 from robot import Robot
 
 robots = []
@@ -15,15 +27,16 @@ total_distance=0
 
 random.seed(1)  #Semente aleatória
 VIEW = True #Execução no modo gráfico
-GROUP_COLORS =['yo', 'bo', 'go'] #Adicione mais cores para ter mais grupos
+GROUP_COLORS = ['yo', 'bo', 'go'] #Adicione mais cores para ter mais grupos
 NUM_ROBOTS_IN_GROUP = 10 #Numero de robos em cada grupo
-SENSOR_RANGE = 2 #Alcance do sensor de obstáculos
+SENSOR_RANGE = 1 #Alcance do sensor de obstáculos
 TARGET_POS = [5,5] #Posição da área alvo
 TARGET_RADIUS = .5 #Raio da área alvo
 WAITING_AREA_RADIUS = 1.5 #Raio da área de espera (NAO UTILIZADO)
 MAX_INTENSITY = 0.08 #Intensidade máxima da força
 K_ATT = 0.1 #Constante de atração
 K_REP = 0.01 #Consntante de repulsão
+
 
 def init():
     if VIEW:
@@ -53,6 +66,7 @@ def init():
         ax.add_artist(target)
         ax.add_artist(waiting_area)
 
+
 def update_view():
     plt.clf()
     plt.axis([-1, 11, -1, 11])
@@ -66,12 +80,15 @@ def update_view():
     ax.add_artist(target)
     ax.add_artist(waiting_area)
 
+
 def save_state():
     global last_configuration
     last_configuration = robots
 
+
 def get_distance(p1,p2):
     return math.sqrt(pow(p1[0]-p2[0],2)+pow(p1[1]-p2[1],2))
+
 
 def read_sensor(robot): #Lê o sensor
     all_robots = last_configuration
@@ -83,12 +100,14 @@ def read_sensor(robot): #Lê o sensor
                 read.append(all_robots[i])           
     return read
 
+
 def get_att_force(robot):
     angle = math.atan2(robot.pos[1]-TARGET_POS[1], robot.pos[0]-TARGET_POS[0])
     intensity = K_ATT*get_distance(robot.pos, TARGET_POS)
     x_component = intensity*math.cos(angle)
     y_component = intensity*math.sin(angle)
     return x_component, y_component 
+
 
 def get_rep_force(robot):
     robots_in_range = read_sensor(robot)
@@ -106,13 +125,15 @@ def get_rep_force(robot):
         y_component = y_component + force*math.sin(angle)
     return x_component, y_component
 
+
 def get_group_distance(group):#Retorna a média da distância
     distance = 0
     for robot in robots:
         if robot.group == group:
             distance += get_distance(robot.pos, TARGET_POS)
     return distance/NUM_ROBOTS_IN_GROUP
-        
+
+
 def set_highest_priority_group():#Define o grupo com permissão de se mover
     global highest_priority_group
     min_dist = sys.maxsize;
@@ -126,6 +147,7 @@ def set_highest_priority_group():#Define o grupo com permissão de se mover
             
     highest_priority_group = min_group
     group_states[min_group] = 1
+
 
 def move_all():
     global total_distance
@@ -175,25 +197,74 @@ def move_all():
         else:
             group_states[i] = 2
 
+
 def check_force(f):
     if f > MAX_INTENSITY:
         return MAX_INTENSITY
     if f < -MAX_INTENSITY:
         return -MAX_INTENSITY
     return f
-    
+
+
 def completed():
     for i in range(len(GROUP_COLORS)):
         if group_states[i] != 2:
             return False
     return True
 
-init() 
-set_highest_priority_group()  
-while(not completed()):
-    plt.pause(0.001)
-    move_all()
-    if VIEW:
-        update_view()
 
-print(str(sum(transit_time)/len(transit_time)) +";" + str(sum(feed_time)/len(feed_time)) + ";" + str(total_distance))
+def begin_execution():
+    init()
+    set_highest_priority_group()
+    while not completed():
+        move_all()
+        if VIEW:
+            plt.pause(0.001)
+            update_view()
+
+    #print(str(sum(transit_time)/len(transit_time)) + ";" + str(sum(feed_time)/len(feed_time)) + ";" + str(total_distance))
+    return str(sum(transit_time)/len(transit_time)), str(sum(feed_time)/len(feed_time)), str(total_distance)
+
+
+def main(args):
+    arguments = docopt.docopt(__doc__)
+    global VIEW
+    global GROUP_COLORS
+    global NUM_ROBOTS_IN_GROUP
+    global robots
+    global group_states
+    global last_configuration
+    global highest_priority_group
+    global transit_time
+    global feed_time
+    global total_distance
+
+    if arguments["--view"]:
+        VIEW = True
+    else:
+        VIEW = False
+    NUM_ROBOTS_IN_GROUP = int(arguments["<number_of_robots_in_group>"])
+    GROUP_COLORS = arguments["<group_colors>"].split(',')
+
+    f = open('{}_{}'.format(NUM_ROBOTS_IN_GROUP, len(GROUP_COLORS)), 'w')
+    for i in range(100):
+        robots = []
+        group_states = []  # 1-entrando, 2-saindo, 0-esperando
+        last_configuration = []
+        highest_priority_group = -1
+        transit_time = []
+        feed_time = []
+        total_distance = 0
+        random.seed(i)
+        print("Beginning execution number {}...".format(i))
+        try:
+            mean_tt, mean_ft, total_dist = begin_execution()
+            f.write("{};{};{};{}\n".format(i,mean_tt, mean_ft, total_dist))
+            print("Execution number {} finished!".format(i))
+        except Exception as e:
+            print("Execution failed due to {}".format(e))
+    f.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv)
