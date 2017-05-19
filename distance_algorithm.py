@@ -246,7 +246,7 @@ def main(args):
     NUM_ROBOTS_IN_GROUP = int(arguments["<number_of_robots_in_group>"])
     GROUP_COLORS = arguments["<group_colors>"].split(',')
 
-    f = open('{}_{}'.format(NUM_ROBOTS_IN_GROUP, len(GROUP_COLORS)), 'w')
+
     for i in range(100):
         robots = []
         group_states = []  # 1-entrando, 2-saindo, 0-esperando
@@ -259,7 +259,9 @@ def main(args):
         print("Beginning execution number {}...".format(i))
         try:
             mean_tt, mean_ft, total_dist = begin_execution()
+            f = open('testes/dist/dist_{}_{}'.format(NUM_ROBOTS_IN_GROUP, len(GROUP_COLORS)), 'a')
             f.write("{};{};{};{}\n".format(i,mean_tt, mean_ft, total_dist))
+            f.close()
             print("Execution number {} finished!".format(i))
         except Exception as e:
             print("Execution failed due to {}".format(e))
