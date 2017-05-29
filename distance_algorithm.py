@@ -15,6 +15,7 @@ import math
 import sys
 import docopt
 import matplotlib.pyplot as plt
+from PIL import ImageGrab
 from robot import Robot
 
 robots = []
@@ -24,6 +25,7 @@ highest_priority_group = -1
 transit_time = []
 feed_time = []
 total_distance=0
+total_it=0
 
 random.seed(1)  #Semente aleatória
 VIEW = True #Execução no modo gráfico
@@ -64,7 +66,7 @@ def init():
         fig = plt.gcf()
         ax = fig.gca()
         ax.add_artist(target)
-        ax.add_artist(waiting_area)
+        #ax.add_artist(waiting_area)
 
 
 def update_view():
@@ -78,7 +80,7 @@ def update_view():
     fig = plt.gcf()
     ax = fig.gca()
     ax.add_artist(target)
-    ax.add_artist(waiting_area)
+    #ax.add_artist(waiting_area)
 
 
 def save_state():
@@ -215,11 +217,16 @@ def completed():
 
 def begin_execution():
     init()
+    global total_it
     set_highest_priority_group()
     while not completed():
+        total_it+=1
         move_all()
         if VIEW:
             plt.pause(0.001)
+            update_view()
+            img = ImageGrab.grab()
+            img.save("prints/dist/{}.png".format(total_it),"PNG")
             update_view()
 
     #print(str(sum(transit_time)/len(transit_time)) + ";" + str(sum(feed_time)/len(feed_time)) + ";" + str(total_distance))
@@ -238,6 +245,7 @@ def main(args):
     global transit_time
     global feed_time
     global total_distance
+    global total_it
 
     if arguments["--view"]:
         VIEW = True
@@ -247,7 +255,7 @@ def main(args):
     GROUP_COLORS = arguments["<group_colors>"].split(',')
 
 
-    for i in range(100):
+    for i in range(1):
         robots = []
         group_states = []  # 1-entrando, 2-saindo, 0-esperando
         last_configuration = []
@@ -255,12 +263,13 @@ def main(args):
         transit_time = []
         feed_time = []
         total_distance = 0
+        total_it=0
         random.seed(i)
         print("Beginning execution number {}...".format(i))
         try:
             mean_tt, mean_ft, total_dist = begin_execution()
-            f = open('testes/dist/dist_{}_{}'.format(NUM_ROBOTS_IN_GROUP, len(GROUP_COLORS)), 'a')
-            f.write("{};{};{};{}\n".format(i,mean_tt, mean_ft, total_dist))
+            f = open('testes/dist/time_dist_{}_{}'.format(NUM_ROBOTS_IN_GROUP, len(GROUP_COLORS)), 'a')
+            f.write("{}\n".format(total_it))
             f.close()
             print("Execution number {} finished!".format(i))
         except Exception as e:
