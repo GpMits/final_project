@@ -161,7 +161,7 @@ def set_highest_priority_group():#Define o grupo com permissão de se mover
     index = 0
     for group, _ in sorted_distances:
         if group_states[group] == 0:
-            group_queues[group] = index
+            group_points[group] = index
             index+=1
 
     for group, distance in sorted_distances:
@@ -289,7 +289,7 @@ def main(args):
     for i in range(100):
         robots = []
         group_states = []  # 1-entrando, 2-saindo, 0-esperando
-        group_queues = []
+        group_points = []
         last_configuration = []
         highest_priority_group = -1
         transit_time = []
